@@ -1,6 +1,13 @@
-<!-- Container div for the globe, which holds the canvas element. -->
-<div class="globe-container">
-    
-    <!-- Canvas element where the globe will be drawn. The #globeCanvas is a template reference variable used to access this element in Angular or other frameworks. -->
-    <canvas #globeCanvas></canvas>
-</div>
+<head>
+    <!-- Add a favicon (icon shown in the browser tab) -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<!-- The div below is used to display the Cesium container when Cesium is loaded -->
+<div *ngIf="isCesiumLoaded; else loading" #cesiumContainer class="cesium-container"></div>
+
+<!-- ng-template is used to display a loading indicator while Cesium is being loaded -->
+<ng-template #loading>
+  <!-- This div displays a message while the Cesium library is loading -->
+  <div class="loading-indicator">Loading Cesium...</div>
+</ng-template>

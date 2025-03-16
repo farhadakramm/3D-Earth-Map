@@ -36,3 +36,25 @@ canvas {
   height: 100%; /* Ensures the canvas takes up 100% of the height of the globe container. */
   display: block; /* Ensures the canvas is displayed as a block-level element (removes any extra space below it). */
 }
+
+/* Styles for the Cesium container element */
+.cesium-container {
+  width: 100vw; /* Sets the width to 100% of the viewport width. */
+  height: 100vh; /* Sets the height to 100% of the viewport height. */
+  position: fixed; /* Fixes the position of the container relative to the viewport, so it remains in place even when scrolling. */
+  top: 0; /* Positions the container at the top of the viewport. */
+  left: 0; /* Positions the container at the left of the viewport. */
+}
+
+/* Styles for the loading indicator shown while Cesium is loading */
+.loading-indicator {
+  position: fixed; /* Fixes the position of the loading indicator to the viewport, so it remains in place during scrolling. */
+  top: 50%; /* Positions the loading indicator vertically at the center of the viewport. */
+  left: 50%; /* Positions the loading indicator horizontally at the center of the viewport. */
+  transform: translate(-50%, -50%); /* Offsets the element by -50% of its width and height to truly center it. */
+  font-size: 1.5rem; /* Sets the font size to 1.5 rem units (relative to the root font size). */
+  color: white; /* Sets the text color of the loading indicator to white. */
+  background-color: rgba(0, 0, 0, 0.7); /* Sets the background color to black with 70% opacity for a semi-transparent effect. */
+  padding: 1rem; /* Adds 1 rem of padding inside the loading indicator to give some space around the text. */
+  border-radius: 0.5rem; /* Rounds the corners of the loading indicator with a 0.5rem radius. */
+}

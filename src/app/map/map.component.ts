@@ -1,127 +1,180 @@
-// Importing necessary modules and libraries from Angular and Three.js
-import { Component, ElementRef, OnInit, ViewChild, AfterViewInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common'; // Utility to check if the platform is a browser
-import * as THREE from 'three'; // Import Three.js core library
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'; // Import OrbitControls for camera manipulation
+import { Component, ElementRef, OnInit, AfterViewInit, OnDestroy, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
-// Component metadata
 @Component({
-  selector: 'app-map',  // The selector for this component
-  standalone: true, // Indicates this component is standalone (no need to import it in other modules)
-  templateUrl: './map.component.html',  // Path to the HTML template
-  styleUrls: ['./map.component.scss']  // Path to the component's styles (CSS or SCSS)
+  selector: 'app-map', // Component selector
+  standalone: true, // Mark this as a standalone component
+  template: `<div #cesiumContainer class="cesium-container"></div>`, // HTML template with a container div for Cesium
+  styles: [`
+    .cesium-container { // CSS style for the Cesium container
+      width: 100vw; // Full width of the viewport
+      height: 100vh; // Full height of the viewport
+      position: fixed; // Fixed positioning
+      top: 0; // Position at the top of the screen
+      left: 0; // Position at the left of the screen
+    }
+  `]
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('globeCanvas', { static: true }) private canvasRef!: ElementRef; // Reference to the canvas element in the template
-  private globe: any; // Variable to store the globe mesh (3D object)
-  private scene!: THREE.Scene; // The scene where all 3D objects will be added
-  private camera!: THREE.PerspectiveCamera; // Camera for rendering the 3D scene
-  private renderer!: THREE.WebGLRenderer; // Renderer for drawing the 3D scene onto the canvas
-  private controls!: OrbitControls; // Controls for interacting with the camera (e.g., panning, zooming)
-  private animationFrameId!: number; // Variable to store the ID of the animation frame
+  @ViewChild('cesiumContainer', { static: true }) container!: ElementRef; // ViewChild to access the container element in the template
+  private viewer!: any; // Cesium viewer object
+  private Cesium: any; // Reference to the Cesium global object
+  private resizeHandler!: () => void; // Handler for resize event
+  isCesiumLoaded = false; // Flag to check if Cesium is loaded
 
-  // Constructor with platform ID injection to check the platform (e.g., browser, server)
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {} // Constructor that injects the platform ID
 
-  // ngOnInit lifecycle hook, called when the component is initialized
-  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {  // Check if the platform is a browser
-      // Initialize the scene, camera, and renderer if running in the browser
-      this.scene = new THREE.Scene();  // Create a new scene
-      this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000); // Set up the camera
-      this.camera.position.z = 3;  // Position the camera along the z-axis
-
-      // Create a WebGLRenderer with the canvas from the template
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.canvasRef.nativeElement });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);  // Set the renderer size to the window size
-      this.renderer.setClearColor(0xffffff, 1);  // Set background color of the canvas (white)
-
-      // Set the background color of the scene
-      this.scene.background = new THREE.Color(0xffffff); // White background for the scene
-
-      // Call the method to create the globe
-      this.createGlobe();
+  async ngOnInit(): Promise<void> {
+    if (isPlatformBrowser(this.platformId)) { // Check if running in the browser (not server-side rendering)
+      try {
+        // Load Cesium from CDN
+        await this.loadCesiumFromCDN();
+        this.isCesiumLoaded = true; // Set flag to true after loading
+      } catch (error) {
+        console.error('Failed to load Cesium:', error); // Log error if Cesium fails to load
+      }
     }
   }
 
-  // ngAfterViewInit lifecycle hook, called after the view is initialized
-  ngAfterViewInit(): void {
-    if (isPlatformBrowser(this.platformId)) {  // Ensure we're in the browser
-      // Set up the OrbitControls for camera manipulation
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-      // Optional control settings (commented out)
-      // this.controls.enableDamping = true;      // Enable damping (smooth transition)
-      // this.controls.dampingFactor = 0.25;      // Set damping factor (adjusts the smoothness)
-      // this.controls.screenSpacePanning = false; // Disable panning in screen space
-
-      // Start the animation loop
-      this.animate();
-
-      // Add event listener to handle window resizing
-      window.addEventListener('resize', this.onResize.bind(this));  // Bind 'this' context for the resize method
+  async ngAfterViewInit(): Promise<void> {
+    if (isPlatformBrowser(this.platformId)) { // Check if running in the browser
+      // Wait for Cesium to load by checking the isCesiumLoaded flag
+      while (!this.isCesiumLoaded) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100ms before checking again
+      }
+  
+      try {
+        // Initialize Cesium after loading
+        await this.initCesium();
+      } catch (error) {
+        console.error('Cesium initialization failed:', error); // Log error if Cesium initialization fails
+      }
     }
   }
 
-  // ngOnDestroy lifecycle hook, called when the component is destroyed
-  ngOnDestroy(): void {
-    if (isPlatformBrowser(this.platformId)) {  // Ensure we're in the browser
-      // Cancel any ongoing animation frame when the component is destroyed
-      cancelAnimationFrame(this.animationFrameId);
-      // Remove the resize event listener to prevent memory leaks
-      window.removeEventListener('resize', this.onResize.bind(this));
-    }
+  private async loadCesiumFromCDN(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Create a new script element to load the Cesium.js file from CDN
+      const script = document.createElement('script');
+      script.src = 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Cesium.js'; // Cesium script URL
+      script.onload = () => {
+        // Check if Cesium is available in the global window object
+        if ((window as any).Cesium) {
+          console.log('Cesium script loaded:', (window as any).Cesium); // Log Cesium if successfully loaded
+          console.log('Cesium version:', (window as any).Cesium.VERSION); // Log the Cesium version
+  
+          // Verify that createWorldTerrainAsync is available in the Cesium object
+          if (!(window as any).Cesium.createWorldTerrain) {
+            reject(new Error('createWorldTerrainAsync is not available in the Cesium object.')); // Reject if not available
+            return;
+          }
+  
+          // Create a link element to load the Cesium CSS file
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Widgets/widgets.css'; // Cesium CSS URL
+          document.head.appendChild(link); // Append the link to the head of the document
+          resolve(); // Resolve the promise when CSS is loaded
+        } else {
+          reject(new Error('Cesium is not available in the global scope.')); // Reject if Cesium is not available
+        }
+      };
+      script.onerror = () => reject(new Error('Failed to load Cesium script.')); // Reject if there is an error loading the script
+      document.head.appendChild(script); // Append the script to the head of the document
+    });
   }
 
-  // Method to create the globe
-  private createGlobe(): void {
-    if (isPlatformBrowser(this.platformId)) {  // Ensure we're in the browser
-      // Load the Earth texture using TextureLoader
-      const textureLoader = new THREE.TextureLoader();
-      const texture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-day.jpg');  // Texture for the globe
-
-      // Create a sphere geometry for the globe (radius = 1, width and height segments = 32)
-      const geometry = new THREE.SphereGeometry(1, 32, 32);
-
-      // Create a basic material and apply the texture to it
-      const material = new THREE.MeshBasicMaterial({
-        map: texture,  // Apply the texture to the material
-        // overdraw: 0.5 // Uncomment if you want to enable overdraw (for alpha blending effects)
+  private async initCesium(): Promise<void> {
+    this.Cesium = (window as any).Cesium; // Get the Cesium object from the global window object
+    if (!this.Cesium) {
+      console.error('Cesium is not loaded.'); // Log an error if Cesium is not loaded
+      return;
+    }
+  
+    try {
+      console.log('Initializing Cesium Viewer...');
+  
+      // Verify container element for the Cesium viewer
+      const container = this.container.nativeElement;
+      if (!container) {
+        console.error('Container element not found.'); // Log an error if the container element is not found
+        return;
+      }
+      console.log('Container element:', container); // Log the container element
+      console.log('Container size:', container.offsetWidth, 'x', container.offsetHeight); // Log the container size
+  
+      // Log Cesium version
+      console.log('Cesium version:', this.Cesium.VERSION);
+  
+      // Set Cesium Ion token for access
+      this.Cesium.Ion.defaultAccessToken = 'YOUR_CESIUM_TOKEN_HERE'; // Replace with your Cesium Ion token
+      console.log('Cesium Ion token set:', this.Cesium.Ion.defaultAccessToken);
+  
+      // Preload required assets (approximate terrain heights and IAU data)
+      console.log('Loading approximateTerrainHeights.json...');
+      await this.Cesium.Resource.fetchJson('https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/approximateTerrainHeights.json')
+        .then(() => console.log('approximateTerrainHeights.json loaded successfully')) // Log success
+        .catch((error: any) => console.error('Failed to load approximateTerrainHeights.json:', error)); // Log error if fails
+  
+      console.log('Loading IAU2006_XYS_18.json...');
+      await this.Cesium.Resource.fetchJson('https://cesium.com/downloads/cesiumjs/releases/1.95/Build/Cesium/Assets/IAU2006_XYS/IAU2006_XYS_18.json')
+        .then(() => console.log('IAU2006_XYS_18.json loaded successfully')) // Log success
+        .catch((error: any) => console.error('Failed to load IAU2006_XYS_18.json:', error)); // Log error if fails
+  
+      // Create World Terrain provider (synchronous)
+      console.log('Creating World Terrain...');
+      const terrainProvider = this.Cesium.createWorldTerrain(); // Create terrain provider
+      console.log('World Terrain created successfully:', terrainProvider); // Log the terrain provider
+  
+      // Initialize Cesium Viewer with various options
+      console.log('Initializing Cesium Viewer...');
+      this.viewer = new this.Cesium.Viewer(container, {
+        animation: true, // Enable animation widget
+        baseLayerPicker: true, // Enable base layer picker
+        fullscreenButton: true, // Enable fullscreen button
+        geocoder: true, // Enable geocoder (search bar)
+        homeButton: true, // Enable home button
+        infoBox: true, // Enable info box
+        sceneModePicker: true, // Enable scene mode picker
+        selectionIndicator: true, // Enable selection indicator
+        timeline: true, // Enable timeline
+        navigationHelpButton: true, // Enable navigation help button
+        imageryProvider: new this.Cesium.OpenStreetMapImageryProvider({
+          url: 'https://a.tile.openstreetmap.org/' // Set OpenStreetMap imagery provider
+        }),
+        terrainProvider: terrainProvider // Set terrain provider
       });
-
-      // Create the globe mesh (3D object) using the geometry and material
-      this.globe = new THREE.Mesh(geometry, material);
-      // Add the globe to the scene
-      this.scene.add(this.globe);
+  
+      console.log('Cesium Viewer initialized:', this.viewer);
+  
+      // Set initial camera view for the map
+      console.log('Setting initial camera view...');
+      this.viewer.camera.setView({
+        destination: this.Cesium.Cartesian3.fromDegrees(0, 0, 10000000), // Set the camera destination (Longitude, Latitude, Height)
+        orientation: {
+          heading: 0, // Heading to East
+          pitch: -Math.PI / 2, // Looking straight down (Pitch)
+          roll: 0 // No roll
+        }
+      });
+      console.log('Camera view set successfully.');
+  
+      // Add resize handler for responsiveness
+      this.resizeHandler = () => this.viewer.resize(); // Resize the viewer on window resize
+      window.addEventListener('resize', this.resizeHandler); // Attach the resize event handler
+      console.log('Resize handler added.');
+  
+    } catch (error) {
+      console.error('Cesium initialization error:', error); // Log any errors during initialization
+      throw error; // Rethrow the error if initialization fails
     }
   }
 
-  // Animation loop to continuously render the scene
-  private animate(): void {
-    // Request the next animation frame
-    this.animationFrameId = requestAnimationFrame(() => this.animate());
-
-    // Update the camera controls (e.g., rotation, zoom)
-    if (this.controls) {
-      this.controls.update();  // Update the controls during the animation loop
-    }
-
-    // Rotate the globe to animate it (you can adjust rotation speed here)
-    this.globe.rotation.x += 0.000;  // No rotation on the x-axis (currently no animation)
-    this.globe.rotation.y += 0.000;  // No rotation on the y-axis (currently no animation)
-
-    // Render the scene using the camera
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  // Method to handle window resizing
-  private onResize(): void {
-    if (isPlatformBrowser(this.platformId)) {  // Ensure we're in the browser
-      // Update camera aspect ratio based on window size
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      this.camera.aspect = width / height;  // Adjust the camera's aspect ratio
-      this.camera.updateProjectionMatrix();  // Update the camera's projection matrix
-      this.renderer.setSize(width, height);  // Resize the renderer to match the new window size
+  ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId) && this.viewer && !this.viewer.isDestroyed()) {
+      // Clean up when the component is destroyed
+      window.removeEventListener('resize', this.resizeHandler); // Remove resize handler
+      this.viewer.destroy(); // Destroy the Cesium viewer to free resources
     }
   }
 }

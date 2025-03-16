@@ -1,0 +1,9 @@
+{
+    "/assets/cesium": {
+      "target": "http://localhost:4200",
+      "secure": false,
+      "pathRewrite": {
+        "^/assets/cesium": ""
+      }
+    }
+  }

@@ -22,16 +22,16 @@
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
-                "glob": "**/*",
-                "input": "public"
-              }
+                "glob": "favicon.ico",
+                "input": "src",
+                "output": "/"
+              },
+              "src/assets"
             ],
             "styles": [
               "src/styles.css"
             ],
-            "scripts": [
-              "node_modules/three-globe/dist/three-globe.min.js"
-            ],
+            "allowedCommonJsDependencies": ["cesium"],
             "server": "src/main.server.ts",
             "prerender": true,
             "ssr": {
@@ -72,7 +72,10 @@
               "buildTarget": "3d-world-map:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "src/proxy.conf.json"
+          }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n"
@@ -87,15 +90,14 @@
             "tsConfig": "tsconfig.spec.json",
             "assets": [
               {
-                "glob": "**/*",
-                "input": "public"
-              }
+                "glob": "favicon.ico",
+                "input": "src",
+                "output": "/"
+              },
+              "src/assets"
             ],
             "styles": [
               "src/styles.css"
-            ],
-            "scripts": [
-              "node_modules/three-globe/dist/three-globe.min.js"
             ]
           }
         }
