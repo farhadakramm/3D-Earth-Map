@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- Declares the document type as HTML5. -->
+<html lang="en">
+  <!-- The root element of the HTML document, with a language attribute set to English. -->
+<head>
+  <meta charset="utf-8">
+  <!-- Specifies the character encoding for the document (UTF-8 ensures proper encoding of text). -->
+  <title>3D World Map</title>
+  <!-- The title of the page, displayed in the browser's title bar or tab. -->
+  <base href="/">
+  <!-- Sets the base URL for all relative URLs in the document. In this case, it sets the base URL to the root directory of the web server. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Ensures the page is responsive on mobile devices by setting the viewport width to the device's width and initial zoom level to 1. -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Specifies the icon file for the browser tab (favicon). -->
+</head>
+<body>
+  <!-- The body of the HTML document where the content of the page will go. -->
+  <app-map></app-map>
+  <!-- The custom element <app-map> is the entry point to the map component, likely defined in an Angular application. -->
+  
+  <!-- Include the Three.js library (version 0.128.0) from a CDN (Content Delivery Network) to provide 3D graphics rendering capabilities. -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+</body>
+</html>

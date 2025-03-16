@@ -1,0 +1,38 @@
+/* Host selector styles the component itself. The styles apply to the outermost element of the component (or the custom element in case of Web Components). */
+:host {
+  display: block; /* Ensures the host element behaves like a block-level element (occupying full width available). */
+  width: 100%; /* Sets the width of the host to be 100% of the parent container. */
+  height: 100%; /* Sets the height of the host to be 100% of the parent container. */
+}
+
+/* Styles for the map container element. */
+.map-container {
+  width: 100%; /* Ensures the map container takes up 100% of the available width. */
+  height: 100%; /* Ensures the map container takes up 100% of the available height. */
+}
+
+/* Styles for the globe container, which holds the 3D globe and ensures it fills the entire screen. */
+.globe-container {
+  position: relative; /* Positions the globe container relative to its parent, allowing absolute positioning of child elements inside it. */
+  width: 100%; /* Ensures the globe container takes up 100% of the available width. */
+  height: 100vh; /* Sets the height to 100% of the viewport height (the full screen height). */
+  display: flex; /* Uses flexbox layout for aligning children (the canvas in this case). */
+  justify-content: center; /* Centers the child (the canvas) horizontally inside the globe container. */
+  align-items: center; /* Centers the child (the canvas) vertically inside the globe container. */
+}
+
+/* Styles for the canvas element. */
+canvas {
+  width: 100%; /* Ensures the canvas element stretches to 100% of the available width inside its container. */
+  height: 100%; /* Ensures the canvas element stretches to 100% of the available height inside its container. */
+}
+
+/* Styles for the specific #globeCanvas element. */
+#globeCanvas {
+  position: absolute; /* Positions the canvas absolutely inside the globe container, allowing it to be placed at specific coordinates. */
+  top: 0; /* Places the top edge of the canvas at the top of the parent container. */
+  left: 0; /* Places the left edge of the canvas at the left of the parent container. */
+  width: 100%; /* Ensures the canvas takes up 100% of the width of the globe container. */
+  height: 100%; /* Ensures the canvas takes up 100% of the height of the globe container. */
+  display: block; /* Ensures the canvas is displayed as a block-level element (removes any extra space below it). */
+}
